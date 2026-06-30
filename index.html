@@ -6,7 +6,7 @@
     <title>Panel Raportów Pipedrive</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center font-sans">
+<body class="bg-gray-100 min-h-screen flex items-center justify-center font-sans p-4">
 
     <div class="bg-white p-8 rounded-xl shadow-lg max-w-md w-full">
         <div class="text-center mb-8">
@@ -28,6 +28,17 @@
         </div>
 
         <div class="space-y-4">
+            <button onclick="downloadReport('wszystkie')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-between shadow-md mb-6 border-b-4 border-indigo-800">
+                <span>📋 Wszystkie statusy zbiorczo</span>
+                <span class="text-xs bg-indigo-500 px-2 py-1 rounded">CSV</span>
+            </button>
+
+            <div class="relative flex py-2 items-center">
+                <div class="flex-grow border-t border-gray-200"></div>
+                <span class="flex-shrink mx-4 text-gray-400 text-xs tracking-wider uppercase">Lub według statusu</span>
+                <div class="flex-grow border-t border-gray-200"></div>
+            </div>
+
             <button onclick="downloadReport('aktywne')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-lg transition duration-200 flex items-center justify-between shadow-sm">
                 <span>🟢 Status: Aktywne</span>
                 <span class="text-xs bg-emerald-500 px-2 py-1 rounded">CSV</span>
@@ -55,12 +66,10 @@
         const datePickerContainer = document.getElementById('date-picker-container');
         const reportDateInput = document.getElementById('report-date');
 
-        // Ustawienie dzisiejszej daty jako domyślnej w kalendarzu
         const today = new Date().toISOString().split('T')[0];
         reportDateInput.value = today;
-        reportDateInput.max = today; // Blokada wybierania dat z przyszłości
+        reportDateInput.max = today;
 
-        // Obsługa pokazywania/ukrywania kalendarza w zależności od checkboxa
         useLiveCheckbox.addEventListener('change', (e) => {
             if (e.target.checked) {
                 datePickerContainer.classList.add('hidden');
@@ -69,27 +78,22 @@
             }
         });
 
-        // Główna funkcja generująca URL i uruchamiająca pobieranie
         function downloadReport(status) {
             let url = '';
             const isLive = useLiveCheckbox.checked;
 
             if (isLive) {
-                // Link do pliku głównego (bieżącego), który nadpisuje się codziennie
                 url = `https://storage.cloud.google.com/${BUCKET_NAME}/organizacje_${status}_000000000000.csv`;
             } else {
-                // Link do folderu /backups/ z uwzględnieniem wybranej daty
                 const rawDate = reportDateInput.value;
                 if (!rawDate) {
                     alert('Proszę wybrać poprawną datę z kalendarza.');
                     return;
                 }
-                // Zamiana formatu YYYY-MM-DD na YYYY_MM_DD (zgodnie z zapisem z BigQuery)
                 const formattedDate = rawDate.replace(/-/g, '_');
                 url = `https://storage.cloud.google.com/${BUCKET_NAME}/backups/organizacje_${status}_${formattedDate}_000000000000.csv`;
             }
 
-            // Otwarcie linku w nowej karcie/rozpoczęcie pobierania
             window.open(url, '_blank');
         }
     </script>

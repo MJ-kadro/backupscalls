@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Raportów Pipedrive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center font-sans">
+
+    <div class="bg-white p-8 rounded-xl shadow-lg max-w-md w-full">
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold text-gray-800">Raporty Organizacji CS</h1>
+            <p class="text-sm text-gray-500 mt-1">Pobierz listy klientów bezpośrednio z bezpiecznego repozytorium</p>
+        </div>
+
+        <div class="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <label class="flex items-center cursor-pointer justify-between">
+                <span class="text-sm font-medium text-gray-700">Pobierz najnowszy stan bieżący</span>
+                <input type="checkbox" id="use-live" class="sr-only peer" checked>
+                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+            </label>
+        </div>
+
+        <div id="date-picker-container" class="mb-8 hidden">
+            <label for="report-date" class="block text-sm font-medium text-gray-700 mb-2">Wybierz datę backupu:</label>
+            <input type="date" id="report-date" class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-indigo-500 focus:border-indigo-500 block text-base">
+        </div>
+
+        <div class="space-y-4">
+            <button onclick="downloadReport('aktywne')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-lg transition duration-200 flex items-center justify-between shadow-sm">
+                <span>🟢 Status: Aktywne</span>
+                <span class="text-xs bg-emerald-500 px-2 py-1 rounded">CSV</span>
+            </button>
+
+            <button onclick="downloadReport('trial')" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium py-3 px-4 rounded-lg transition duration-200 flex items-center justify-between shadow-sm">
+                <span>🟡 Status: Trial</span>
+                <span class="text-xs bg-amber-400 px-2 py-1 rounded">CSV</span>
+            </button>
+
+            <button onclick="downloadReport('freemium')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition duration-200 flex items-center justify-between shadow-sm">
+                <span>🔵 Status: Freemium</span>
+                <span class="text-xs bg-blue-500 px-2 py-1 rounded">CSV</span>
+            </button>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-gray-100 text-center">
+            <p class="text-xs text-gray-400">Dostęp zabezpieczony przez Google Workspace.<br>Wymagane zalogowanie na konto firmowe.</p>
+        </div>
+    </div>
+
+    <script>
+        const BUCKET_NAME = 'lista_organizacji_cs';
+        const useLiveCheckbox = document.getElementById('use-live');
+        const datePickerContainer = document.getElementById('date-picker-container');
+        const reportDateInput = document.getElementById('report-date');
+
+        // Ustawienie dzisiejszej daty jako domyślnej w kalendarzu
+        const today = new Date().toISOString().split('T')[0];
+        reportDateInput.value = today;
+        reportDateInput.max = today; // Blokada wybierania dat z przyszłości
+
+        // Obsługa pokazywania/ukrywania kalendarza w zależności od checkboxa
+        useLiveCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                datePickerContainer.classList.add('hidden');
+            } else {
+                datePickerContainer.classList.remove('hidden');
+            }
+        });
+
+        // Główna funkcja generująca URL i uruchamiająca pobieranie
+        function downloadReport(status) {
+            let url = '';
+            const isLive = useLiveCheckbox.checked;
+
+            if (isLive) {
+                // Link do pliku głównego (bieżącego), który nadpisuje się codziennie
+                url = `https://storage.cloud.google.com/${BUCKET_NAME}/organizacje_${status}_000000000000.csv`;
+            } else {
+                // Link do folderu /backups/ z uwzględnieniem wybranej daty
+                const rawDate = reportDateInput.value;
+                if (!rawDate) {
+                    alert('Proszę wybrać poprawną datę z kalendarza.');
+                    return;
+                }
+                // Zamiana formatu YYYY-MM-DD na YYYY_MM_DD (zgodnie z zapisem z BigQuery)
+                const formattedDate = rawDate.replace(/-/g, '_');
+                url = `https://storage.cloud.google.com/${BUCKET_NAME}/backups/organizacje_${status}_${formattedDate}_000000000000.csv`;
+            }
+
+            // Otwarcie linku w nowej karcie/rozpoczęcie pobierania
+            window.open(url, '_blank');
+        }
+    </script>
+</body>
+</html>
